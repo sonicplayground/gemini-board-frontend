@@ -48,7 +48,7 @@ export default defineNuxtConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        prependPath: false,
+        prependPath: true,
         ws: true
       }
     }

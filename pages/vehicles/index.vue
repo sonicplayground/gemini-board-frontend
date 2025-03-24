@@ -84,8 +84,20 @@ const deleteVehicle = async (item: any) => {
 
   try {
     loading.value = true
-    // TODO: API 호출 구현
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 임시 딜레이
+    const response = await fetch(`http://localhost:8080/api/v1/vehicles/${item.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '차량 삭제에 실패했습니다.')
+    }
+
     vehicles.value = vehicles.value.filter(v => v.id !== item.id)
   } catch (error: any) {
     console.error('차량 삭제 실패:', error)
@@ -95,26 +107,31 @@ const deleteVehicle = async (item: any) => {
   }
 }
 
-onMounted(async () => {
+const fetchVehicles = async () => {
   try {
     loading.value = true
-    // TODO: API 호출 구현
-    await new Promise(resolve => setTimeout(resolve, 1000)) // 임시 딜레이
-    vehicles.value = [
-      {
-        id: 1,
-        name: '내 차량 1',
-        manufacturer: '현대',
-        model: '아반떼',
-        year: 2020,
-        licensePlate: '12가 3456'
-      }
-    ]
+    const response = await fetch('http://localhost:8080/api/v1/vehicles', {
+      headers: {
+        'Accept': 'application/json'
+      },
+      credentials: 'include'
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || '차량 목록을 불러오는데 실패했습니다.')
+    }
+
+    vehicles.value = await response.json()
   } catch (error: any) {
     console.error('차량 목록 조회 실패:', error)
     alert(error.message || '차량 목록을 불러오는데 실패했습니다.')
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  fetchVehicles()
 })
 </script> 
