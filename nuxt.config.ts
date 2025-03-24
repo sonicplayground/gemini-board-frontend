@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     },
     resolve: {
       alias: {
-        '@': '/Users/son-inchang/Study/gemini-front'
+        '@': '.'
       }
     },
     plugins: [
