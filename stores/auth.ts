@@ -51,86 +51,40 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(loginId: string, password: string) {
       try {
-        // 직접 fetch 사용 - utils/api 메서드는 인증 토큰 관련 로직을 포함하고 있어서
-        // 로그인 시에는 직접 fetch를 사용합니다.
-        const response = await fetch('http://localhost:8080/api/v1/login/sign-in', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({ loginId, password })
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}))
-          throw new Error(errorData.message || '로그인에 실패했습니다.')
-        }
-
-        const data = await response.json()
-        
-        // 토큰 저장
-        this.token = data.token
+        const response = await post('/login/sign-in', { loginId, password })
+        this.token = response.token
         this.isAuthenticated = true
-        
-        // 사용자 정보 저장
-        this.user = {
-          loginId: data.loginId || loginId,
-          name: data.name || '',
-          userType: data.userType || ''
-        }
-        
-        // 로컬 스토리지에도 저장
-        if (isBrowser()) {
-          setLocalStorageItem('auth_token', data.token)
-          setLocalStorageItem('auth_user', JSON.stringify(this.user))
-        }
-        
-        return data
+        localStorage.setItem('token', response.token)
+        return true
       } catch (error: any) {
         console.error('로그인 실패:', error)
-        throw error
+        throw new Error(error.message || '로그인에 실패했습니다.')
       }
     },
 
-    async logout() {
+    async signup(userData: any) {
       try {
-        // 로그아웃 API 호출은 선택적입니다
-        // await post('/logout', {})
-        
-        // 상태 초기화
-        this.token = null
-        this.isAuthenticated = false
-        this.user = null
-        
-        // 로컬 스토리지에서 제거
-        if (isBrowser()) {
-          removeLocalStorageItem('auth_token')
-          removeLocalStorageItem('auth_user')
-        }
-      } catch (error) {
-        console.error('로그아웃 실패:', error)
+        const response = await post('/login/sign-up', userData)
+        return response
+      } catch (error: any) {
+        console.error('회원가입 실패:', error)
+        throw new Error(error.message || '회원가입에 실패했습니다.')
       }
     },
-    
-    // 앱 초기화시 인증 상태 복원
+
+    logout() {
+      this.token = null
+      this.isAuthenticated = false
+      this.user = null
+      localStorage.removeItem('token')
+    },
+
     initAuth() {
-      if (isBrowser()) {
-        const token = getLocalStorageItem('auth_token')
-        const user = JSON.parse(getLocalStorageItem('auth_user') || 'null')
-        
-        if (token) {
-          this.token = token
-          if (user) {
-            this.user = user
-          }
-          this.isAuthenticated = true
-          console.log('인증 상태 복원 완료')
-          return true
-        }
+      const token = localStorage.getItem('token')
+      if (token) {
+        this.token = token
+        this.isAuthenticated = true
       }
-      return false
     },
 
     // 토큰 유효성 확인 (선택적)

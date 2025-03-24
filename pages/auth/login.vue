@@ -28,6 +28,13 @@
             </v-form>
           </v-card-text>
           <v-card-actions class="pa-4">
+            <v-btn
+              color="secondary"
+              @click="goToSignup"
+              variant="outlined"
+            >
+              회원가입
+            </v-btn>
             <v-spacer></v-spacer>
             <v-btn
               color="primary"
@@ -74,5 +81,9 @@ const handleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const goToSignup = () => {
+  router.push('/auth/signup')
 }
 </script> 
