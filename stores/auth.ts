@@ -120,11 +120,31 @@ export const useAuthStore = defineStore('auth', {
         const token = getLocalStorageItem('auth_token')
         const user = JSON.parse(getLocalStorageItem('auth_user') || 'null')
         
-        if (token && user) {
+        if (token) {
           this.token = token
-          this.user = user
+          if (user) {
+            this.user = user
+          }
           this.isAuthenticated = true
+          console.log('인증 상태 복원 완료')
+          return true
         }
+      }
+      return false
+    },
+
+    // 토큰 유효성 확인 (선택적)
+    async validateToken() {
+      if (!this.token) return false
+      
+      try {
+        // 백엔드에 토큰 유효성 검증 요청
+        // 실제 백엔드 API가 있다면 여기서 토큰 검증 API 호출
+        return true
+      } catch (error) {
+        console.error('토큰 검증 실패:', error)
+        this.logout()
+        return false
       }
     }
   }

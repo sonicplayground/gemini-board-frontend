@@ -68,12 +68,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVehicleStore } from '../../stores/vehicle'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const vehicleStore = useVehicleStore()
+const authStore = useAuthStore()
 const loading = ref(false)
 const currentPage = ref(1)
 
@@ -113,11 +115,25 @@ const deleteVehicle = async (item: any) => {
 
 const fetchVehicles = async (page = 0) => {
   try {
+    // 인증되지 않은 상태면 로그인 페이지로 리다이렉트
+    if (!authStore.isAuthenticated && !authStore.token) {
+      router.push('/auth/login')
+      return
+    }
+    
     loading.value = true
     await vehicleStore.fetchVehicles(page)
   } catch (error: any) {
     console.error('차량 목록 조회 실패:', error)
-    alert(error.message || '차량 목록을 불러오는데 실패했습니다.')
+    
+    // 401 또는 403 에러인 경우 로그인 페이지로 리다이렉트
+    if (error.status === 401 || error.status === 403) {
+      alert('인증이 필요합니다. 다시 로그인해주세요.')
+      await authStore.logout()
+      router.push('/auth/login')
+    } else {
+      alert(error.message || '차량 목록을 불러오는데 실패했습니다.')
+    }
   } finally {
     loading.value = false
   }
@@ -128,7 +144,26 @@ const changePage = (page: number) => {
   fetchVehicles(page - 1)
 }
 
-onMounted(() => {
-  fetchVehicles()
+onMounted(async () => {
+  // 인증 상태 초기화 후 데이터 로드
+  authStore.initAuth()
+  
+  // 인증 상태가 변경되면 차량 목록 로드
+  if (authStore.isAuthenticated) {
+    fetchVehicles()
+  } else if (authStore.token) {
+    // 토큰은 있지만 인증 상태가 아직 완료되지 않은 경우
+    authStore.isAuthenticated = true
+    fetchVehicles()
+  } else {
+    router.push('/auth/login')
+  }
+})
+
+// authStore의 인증 상태 변화를 감시
+watch(() => authStore.isAuthenticated, (isAuthenticated) => {
+  if (isAuthenticated) {
+    fetchVehicles()
+  }
 })
 </script> 
