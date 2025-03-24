@@ -40,10 +40,7 @@ export default defineNuxtConfig({
         '@': '.',
         '~': '.'
       }
-    },
-    plugins: [
-      require('vite-tsconfig-paths')
-    ]
+    }
   },
   nitro: {
     devProxy: {
