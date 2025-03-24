@@ -48,10 +48,8 @@ export default defineNuxtConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        cookieDomainRewrite: {
-          '*': ''
-        }
+        prependPath: false,
+        ws: true
       }
     }
   }
