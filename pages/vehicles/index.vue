@@ -20,6 +20,9 @@
               :loading="loading"
               class="elevation-1"
             >
+              <template v-slot:item.status.mileage="{ item }">
+                {{ item.status?.mileage || '-' }} km
+              </template>
               <template v-slot:item.actions="{ item }">
                 <v-btn
                   icon
@@ -47,6 +50,16 @@
                 </v-btn>
               </template>
             </v-data-table>
+            
+            <!-- 페이지네이션 -->
+            <div class="d-flex justify-center mt-4">
+              <v-pagination
+                v-if="vehicleStore.pagination.totalPages > 1"
+                v-model="currentPage"
+                :length="vehicleStore.pagination.totalPages"
+                @update:model-value="changePage"
+              ></v-pagination>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -55,30 +68,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVehicleStore } from '../../stores/vehicle'
 
 const router = useRouter()
 const vehicleStore = useVehicleStore()
 const loading = ref(false)
-const vehicles = ref([])
+const currentPage = ref(1)
+
+// 차량 스토어에서 차량 목록 가져오기
+const vehicles = computed(() => vehicleStore.vehicles)
 
 const headers = [
   { title: '차량명', key: 'name' },
   { title: '제조사', key: 'manufacturer' },
-  { title: '모델', key: 'model' },
-  { title: '연식', key: 'year' },
-  { title: '번호판', key: 'licensePlate' },
+  { title: '모델', key: 'modelName' },
+  { title: '연식', key: 'purchaseYear' },
+  { title: '주행거리', key: 'status.mileage' },
   { title: '관리', key: 'actions', sortable: false }
 ]
 
 const viewVehicle = (item: any) => {
-  router.push(`/vehicles/${item.id}`)
+  router.push(`/vehicles/${item.vehicleKey}`)
 }
 
 const editVehicle = (item: any) => {
-  router.push(`/vehicles/${item.id}/edit`)
+  router.push(`/vehicles/${item.vehicleKey}/edit`)
 }
 
 const deleteVehicle = async (item: any) => {
@@ -86,8 +102,7 @@ const deleteVehicle = async (item: any) => {
 
   try {
     loading.value = true
-    await vehicleStore.deleteVehicle(item.id)
-    vehicles.value = vehicles.value.filter(v => v.id !== item.id)
+    await vehicleStore.deleteVehicle(item.vehicleKey)
   } catch (error: any) {
     console.error('차량 삭제 실패:', error)
     alert(error.message || '차량 삭제에 실패했습니다.')
@@ -96,16 +111,21 @@ const deleteVehicle = async (item: any) => {
   }
 }
 
-const fetchVehicles = async () => {
+const fetchVehicles = async (page = 0) => {
   try {
     loading.value = true
-    vehicles.value = await vehicleStore.fetchVehicles()
+    await vehicleStore.fetchVehicles(page)
   } catch (error: any) {
     console.error('차량 목록 조회 실패:', error)
     alert(error.message || '차량 목록을 불러오는데 실패했습니다.')
   } finally {
     loading.value = false
   }
+}
+
+const changePage = (page: number) => {
+  // Vuetify의 페이지네이션은 1부터 시작하지만, API는 0부터 시작하므로 변환
+  fetchVehicles(page - 1)
 }
 
 onMounted(() => {
