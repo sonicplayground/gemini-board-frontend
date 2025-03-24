@@ -94,6 +94,73 @@
                 </v-col>
               </v-row>
 
+              <!-- 차량 상태 정보 섹션 -->
+              <v-divider class="my-6"></v-divider>
+              <v-card-title class="text-h6 mb-4">차량 상태 정보</v-card-title>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="formData.status.engineOilChangeDate"
+                    label="엔진오일 교체일"
+                    type="date"
+                    :rules="[v => !!v || '엔진오일 교체일을 입력해주세요']"
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="formData.status.brakePadReplacementDate"
+                    label="브레이크 패드 교체일"
+                    type="date"
+                    :rules="[v => !!v || '브레이크 패드 교체일을 입력해주세요']"
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-card variant="outlined" class="pa-4">
+                    <v-card-title class="text-subtitle-1 mb-4">타이어 교체일</v-card-title>
+                    <v-row>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="formData.status.tireForeRightReplacementDate"
+                          label="앞바퀴 오른쪽"
+                          type="date"
+                          :rules="[v => !!v || '앞바퀴 오른쪽 타이어 교체일을 입력해주세요']"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="formData.status.tireForeLeftReplacementDate"
+                          label="앞바퀴 왼쪽"
+                          type="date"
+                          :rules="[v => !!v || '앞바퀴 왼쪽 타이어 교체일을 입력해주세요']"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="formData.status.tireBackRightReplacementDate"
+                          label="뒷바퀴 오른쪽"
+                          type="date"
+                          :rules="[v => !!v || '뒷바퀴 오른쪽 타이어 교체일을 입력해주세요']"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="formData.status.tireBackLeftReplacementDate"
+                          label="뒷바퀴 왼쪽"
+                          type="date"
+                          :rules="[v => !!v || '뒷바퀴 왼쪽 타이어 교체일을 입력해주세요']"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                    </v-row>
+                  </v-card>
+                </v-col>
+              </v-row>
+
               <v-row class="mt-4">
                 <v-col cols="12">
                   <v-btn
@@ -136,12 +203,12 @@ const formData = ref({
   memo: '',
   status: {
     mileage: '0',
-    engineOilChangeDate: `${new Date().getFullYear()}-01-01`,
-    brakePadReplacementDate: `${new Date().getFullYear()}-01-01`,
-    tireForeRightReplacementDate: `${new Date().getFullYear()}-01-01`,
-    tireForeLeftReplacementDate: `${new Date().getFullYear()}-01-01`,
-    tireBackRightReplacementDate: `${new Date().getFullYear()}-01-01`,
-    tireBackLeftReplacementDate: `${new Date().getFullYear()}-01-01`
+    engineOilChangeDate: new Date().toISOString().split('T')[0],
+    brakePadReplacementDate: new Date().toISOString().split('T')[0],
+    tireForeRightReplacementDate: new Date().toISOString().split('T')[0],
+    tireForeLeftReplacementDate: new Date().toISOString().split('T')[0],
+    tireBackRightReplacementDate: new Date().toISOString().split('T')[0],
+    tireBackLeftReplacementDate: new Date().toISOString().split('T')[0]
   }
 })
 
@@ -151,7 +218,9 @@ const handleSubmit = async () => {
 
   try {
     loading.value = true
-    const response = await post('/api/v1/vehicles', formData.value)
+    // 주행거리를 status에 추가
+    formData.value.status.mileage = formData.value.mileage.toString()
+    const response = await post('/vehicles', formData.value)
     router.push(`/vehicles/${response.vehicleKey}`)
   } catch (error) {
     console.error('차량 등록 실패:', error)

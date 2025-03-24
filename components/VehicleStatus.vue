@@ -49,42 +49,51 @@
         <v-card-title>차량 상태 타임라인</v-card-title>
         <v-card-text>
           <div class="timeline-container">
-            <div class="timeline">
-              <div class="timeline-years">
-                <div
-                  v-for="year in timelineYears"
-                  :key="year"
-                  class="year-marker"
-                  :style="{ left: `${getYearPosition(year)}%` }"
-                >
-                  {{ year }}년
-                </div>
+            <!-- 연도 표시 -->
+            <div class="timeline-years">
+              <div
+                v-for="year in timelineYears"
+                :key="year"
+                class="timeline-year"
+                :style="{ left: `${getYearPosition(year)}%` }"
+              >
+                {{ year }}년
               </div>
-              <div class="timeline-line"></div>
-              <template v-for="(event, index) in processedTimelineEvents" :key="index">
-                <!-- 이벤트 표시 -->
-                <div
-                  v-if="!event.isGap"
-                  class="timeline-event"
-                  :style="{
-                    left: `${event.position}%`,
-                    top: `${event.verticalOffset}px`
-                  }"
-                  :class="getEventColor(event.type)"
-                >
-                  <div class="event-date">{{ formatDate(event.date) }}</div>
-                  <div class="event-title">{{ event.title }}</div>
-                  <div class="event-line"></div>
+            </div>
+
+            <!-- 타임라인 이벤트 -->
+            <div class="timeline-events">
+              <div
+                v-for="(event, index) in processedTimelineEvents"
+                :key="event.id"
+                class="timeline-event"
+                :style="{
+                  left: `${event.position}%`,
+                  top: `${index * 60}px` // 각 이벤트를 60px 간격으로 배치
+                }"
+              >
+                <div class="event-icon" :class="getEventColor(event.type)">
+                  <v-icon>{{ event.icon }}</v-icon>
                 </div>
-                <!-- 공백기 표시 -->
-                <div
-                  v-else
-                  class="timeline-gap"
-                  :style="{ left: `${event.position}%` }"
-                >
-                  <div class="gap-marker">...</div>
-                </div>
-              </template>
+                <div class="event-label">{{ event.label }}</div>
+                <div class="event-date">{{ formatDate(event.date) }}</div>
+              </div>
+            </div>
+
+            <!-- 타임라인 선 -->
+            <div class="timeline-line"></div>
+
+            <!-- 간격 표시 -->
+            <div
+              v-for="(gap, index) in timelineGaps"
+              :key="'gap-' + index"
+              class="timeline-gap"
+              :style="{
+                left: `${gap.position}%`,
+                width: `${gap.width}%`
+              }"
+            >
+              <div class="gap-marker">...</div>
             </div>
           </div>
         </v-card-text>
@@ -195,8 +204,8 @@ const formatDate = (dateString: string) => {
 // 타임라인 연도 계산
 const timelineYears = computed(() => {
   const years = []
-  const startYear = parseInt(props.vehicle.purchaseYear)
-  const currentYear = new Date().getFullYear()
+  const startYear = parseInt(props.vehicle.purchaseYear) - 1
+  const currentYear = new Date().getFullYear() + 1
   
   for (let year = startYear; year <= currentYear; year++) {
     years.push(year)
@@ -207,8 +216,8 @@ const timelineYears = computed(() => {
 
 // 연도 위치 계산
 const getYearPosition = (year: number) => {
-  const startYear = parseInt(props.vehicle.purchaseYear)
-  const currentYear = new Date().getFullYear()
+  const startYear = parseInt(props.vehicle.purchaseYear) - 1
+  const currentYear = new Date().getFullYear() + 1
   return ((year - startYear) / (currentYear - startYear)) * 100
 }
 
@@ -219,24 +228,60 @@ const timelineEvents = computed(() => {
   
   // 구매일 추가
   events.push({
+    id: 'purchase',
     date: purchaseDate,
-    title: '차량 구매',
+    label: '차량 구매',
     type: 'purchase',
-    position: 0,
-    verticalOffset: 0
+    position: getYearPosition(parseInt(props.vehicle.purchaseYear)),
+    icon: 'mdi-car'
   })
 
   // 상태 이벤트 추가 (mileage 제외)
-  Object.entries(props.vehicle.status).forEach(([key, value], index) => {
+  Object.entries(props.vehicle.status).forEach(([key, value]) => {
     if (value && key !== 'mileage') {
       const date = new Date(value)
-      const position = ((date.getTime() - purchaseDate.getTime()) / (365 * 24 * 60 * 60 * 1000)) * 100
+      const year = date.getFullYear()
+      const position = getYearPosition(year)
+      
+      let label = ''
+      let icon = 'mdi-tools'
+      
+      switch (key) {
+        case 'engineOilChangeDate':
+          label = '엔진오일 교체'
+          icon = 'mdi-oil'
+          break
+        case 'brakePadReplacementDate':
+          label = '브레이크 패드 교체'
+          icon = 'mdi-brake'
+          break
+        case 'tireForeRightReplacementDate':
+          label = '앞바퀴 오른쪽 타이어'
+          icon = 'mdi-tire'
+          break
+        case 'tireForeLeftReplacementDate':
+          label = '앞바퀴 왼쪽 타이어'
+          icon = 'mdi-tire'
+          break
+        case 'tireBackRightReplacementDate':
+          label = '뒷바퀴 오른쪽 타이어'
+          icon = 'mdi-tire'
+          break
+        case 'tireBackLeftReplacementDate':
+          label = '뒷바퀴 왼쪽 타이어'
+          icon = 'mdi-tire'
+          break
+        default:
+          label = key
+      }
+
       events.push({
+        id: key,
         date,
-        title: key,
+        label,
         type: 'maintenance',
-        position: Math.min(Math.max(position, 0), 100),
-        verticalOffset: (index % 3) * 60 // 3개씩 그룹화하여 수직 오프셋 적용
+        position,
+        icon
       })
     }
   })
@@ -258,6 +303,7 @@ const processedTimelineEvents = computed(() => {
       const gap = events[i + 1].position - events[i].position
       if (gap > GAP_THRESHOLD) {
         processedEvents.push({
+          id: `gap-${i}`,
           isGap: true,
           position: events[i].position + gap / 2,
           date: new Date(events[i].date.getTime() + (events[i + 1].date.getTime() - events[i].date.getTime()) / 2)
@@ -273,106 +319,130 @@ const processedTimelineEvents = computed(() => {
 <style scoped>
 .timeline-container {
   position: relative;
-  height: 300px;
-  margin: 20px 0;
-  padding: 20px 0;
-  overflow-x: auto;
-}
-
-.timeline {
-  position: relative;
+  width: 100%;
   min-width: 1000px;
-  height: 100%;
+  height: 400px; /* 높이 증가 */
+  margin: 40px 0;
+  padding: 0 20px;
+  overflow-x: auto;
 }
 
 .timeline-years {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   height: 30px;
-  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
 }
 
-.year-marker {
+.timeline-year {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 0.8em;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.timeline-events {
+  position: relative;
+  height: calc(100% - 30px); /* 연도 표시 영역 제외 */
+  margin-bottom: 30px;
+}
+
+.timeline-event {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+}
+
+.event-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.event-label {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.event-date {
+  font-size: 0.7rem;
   color: #666;
 }
 
 .timeline-line {
   position: absolute;
-  top: 30px;
+  bottom: 30px;
   left: 0;
   right: 0;
   height: 2px;
   background-color: #ddd;
-}
-
-.timeline-event {
-  position: absolute;
-  top: 40px;
-  transform: translateX(-50%);
-  background-color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
-  min-width: 100px;
   z-index: 1;
-}
-
-.event-line {
-  position: absolute;
-  bottom: -20px;
-  left: 50%;
-  width: 2px;
-  height: 20px;
-  background-color: #ddd;
-  transform: translateX(-50%);
 }
 
 .timeline-gap {
   position: absolute;
-  top: 40px;
-  transform: translateX(-50%);
-  background-color: #f5f5f5;
-  padding: 4px 8px;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  text-align: center;
-  min-width: 40px;
-  z-index: 0;
+  bottom: 30px;
+  height: 2px;
+  background-color: #ddd;
+  z-index: 1;
 }
 
 .gap-marker {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f5f5f5;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
   color: #666;
-  font-weight: bold;
+  white-space: nowrap;
+  z-index: 2;
 }
 
-.event-date {
-  font-size: 0.8em;
-  color: #666;
-}
-
-.event-title {
-  font-size: 0.9em;
-  font-weight: bold;
-}
-
+/* 이벤트 타입별 색상 */
 .event-purchase {
-  border-left: 4px solid #4CAF50;
+  background-color: #4CAF50;
 }
 
 .event-maintenance {
-  border-left: 4px solid #2196F3;
+  background-color: #2196F3;
 }
 
 .event-default {
-  border-left: 4px solid #9E9E9E;
+  background-color: #9E9E9E;
 }
 
+/* 타이어 상태 색상 */
+.tire-green {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tire-yellow {
+  background-color: #FFC107;
+  color: black;
+}
+
+.tire-red {
+  background-color: #F44336;
+  color: white;
+}
+
+/* 타이어 상태 표시 */
 .tire-status-container {
   padding: 20px;
 }
@@ -391,30 +461,24 @@ const processedTimelineEvents = computed(() => {
 }
 
 .tire-icon {
-  font-size: 2em;
+  font-size: 2rem;
   margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  margin: 0 auto;
 }
 
 .tire-date {
-  font-size: 0.8em;
+  font-size: 0.8rem;
   padding: 4px;
   border-radius: 4px;
   margin-bottom: 5px;
-}
-
-.tire-green {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.tire-yellow {
-  background-color: #FFC107;
-  color: black;
-}
-
-.tire-red {
-  background-color: #F44336;
-  color: white;
+  text-align: center;
 }
 
 :deep(.v-table) {
