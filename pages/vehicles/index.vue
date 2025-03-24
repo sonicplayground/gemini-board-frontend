@@ -8,7 +8,7 @@
             <v-spacer></v-spacer>
             <v-btn
               color="primary"
-              to="/vehicles/new"
+              to="/vehicles/create"
             >
               차량 등록
             </v-btn>
