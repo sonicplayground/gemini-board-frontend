@@ -7,7 +7,7 @@
             로그인
           </v-card-title>
           <v-card-text>
-            <v-form ref="form" v-model="isFormValid">
+            <v-form ref="form" v-model="isFormValid" @submit.prevent="handleLogin">
               <v-text-field
                 v-model="formData.loginId"
                 label="아이디"
@@ -23,6 +23,7 @@
                 :rules="[v => !!v || '비밀번호를 입력해주세요']"
                 required
                 class="mb-4"
+                @keydown.enter="handleLogin"
               ></v-text-field>
             </v-form>
           </v-card-text>
@@ -33,6 +34,7 @@
               :loading="loading"
               :disabled="!isFormValid"
               @click="handleLogin"
+              type="submit"
             >
               로그인
             </v-btn>
