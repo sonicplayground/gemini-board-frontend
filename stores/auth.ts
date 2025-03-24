@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { post } from '@/utils/api'
+import { post } from '../utils/api'
 
 interface AuthState {
   isAuthenticated: boolean

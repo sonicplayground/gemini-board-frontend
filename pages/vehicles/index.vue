@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useVehicleStore } from '@/stores/vehicle'
+import { useVehicleStore } from '../../stores/vehicle'
 
 const router = useRouter()
 const vehicleStore = useVehicleStore()

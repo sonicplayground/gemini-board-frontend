@@ -30,6 +30,7 @@
 <script setup lang="ts">
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -38,4 +39,9 @@ const handleLogout = async () => {
   await authStore.logout()
   router.push('/auth/login')
 }
+
+// 앱 마운트 시 인증 상태 초기화
+onMounted(() => {
+  authStore.initAuth()
+})
 </script>

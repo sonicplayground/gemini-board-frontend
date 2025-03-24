@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { get, post, put, del } from '@/utils/api'
+import { get, post, put, del } from '../utils/api'
 
 interface User {
   id: string | number
