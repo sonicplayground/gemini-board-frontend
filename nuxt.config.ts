@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   css: [
     'vuetify/lib/styles/main.sass',
     '@mdi/font/css/materialdesignicons.min.css',
-    '@/assets/styles/main.scss'
+    './assets/styles/main.scss'
   ],
   build: {
     transpile: ['vuetify']
@@ -31,8 +31,13 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: '@use "@/assets/styles/_variables.scss" as *;'
+          additionalData: '@use "./assets/styles/_variables.scss" as *;'
         }
+      }
+    },
+    resolve: {
+      alias: {
+        '@': '/Users/son-inchang/Study/gemini-front'
       }
     },
     plugins: [
