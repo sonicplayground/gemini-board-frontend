@@ -3,9 +3,11 @@ import { useAuthStore } from '../stores/auth'
 // API 기본 URL
 const API_BASE_URL = 'http://localhost:8080/api/v1'
 
+// 브라우저 환경인지 확인하는 함수
+const isBrowser = () => typeof window !== 'undefined'
+
 // API 요청을 위한 기본 헤더와 옵션을 설정하는 함수
 export const createFetchOptions = (options: RequestInit = {}): RequestInit => {
-  const authStore = useAuthStore()
   const headers = new Headers(options.headers || {})
   
   // Content-Type 설정 (기본값 지정)
@@ -18,9 +20,13 @@ export const createFetchOptions = (options: RequestInit = {}): RequestInit => {
     headers.set('Accept', 'application/json')
   }
   
-  // 인증 토큰이 있으면 Authorization 헤더에 추가
-  if (authStore.token) {
-    headers.set('Authorization', `Bearer ${authStore.token}`)
+  // 브라우저 환경에서만 인증 토큰 추가
+  if (isBrowser()) {
+    const authStore = useAuthStore()
+    // 인증 토큰이 있으면 Authorization 헤더에 추가
+    if (authStore.token) {
+      headers.set('Authorization', `Bearer ${authStore.token}`)
+    }
   }
   
   return {

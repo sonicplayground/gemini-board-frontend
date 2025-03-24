@@ -11,11 +11,36 @@ interface AuthState {
   } | null
 }
 
+// 브라우저 환경인지 확인하는 함수
+const isBrowser = () => typeof window !== 'undefined'
+
+// localStorage에 안전하게 접근하는 함수
+const getLocalStorageItem = (key: string) => {
+  if (isBrowser()) {
+    return localStorage.getItem(key)
+  }
+  return null
+}
+
+// localStorage에 안전하게 저장하는 함수
+const setLocalStorageItem = (key: string, value: string) => {
+  if (isBrowser()) {
+    localStorage.setItem(key, value)
+  }
+}
+
+// localStorage에서 안전하게 삭제하는 함수
+const removeLocalStorageItem = (key: string) => {
+  if (isBrowser()) {
+    localStorage.removeItem(key)
+  }
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     isAuthenticated: false,
-    token: localStorage.getItem('auth_token'),
-    user: JSON.parse(localStorage.getItem('auth_user') || 'null')
+    token: getLocalStorageItem('auth_token'),
+    user: isBrowser() ? JSON.parse(getLocalStorageItem('auth_user') || 'null') : null
   }),
 
   getters: {
@@ -57,8 +82,10 @@ export const useAuthStore = defineStore('auth', {
         }
         
         // 로컬 스토리지에도 저장
-        localStorage.setItem('auth_token', data.token)
-        localStorage.setItem('auth_user', JSON.stringify(this.user))
+        if (isBrowser()) {
+          setLocalStorageItem('auth_token', data.token)
+          setLocalStorageItem('auth_user', JSON.stringify(this.user))
+        }
         
         return data
       } catch (error: any) {
@@ -78,8 +105,10 @@ export const useAuthStore = defineStore('auth', {
         this.user = null
         
         // 로컬 스토리지에서 제거
-        localStorage.removeItem('auth_token')
-        localStorage.removeItem('auth_user')
+        if (isBrowser()) {
+          removeLocalStorageItem('auth_token')
+          removeLocalStorageItem('auth_user')
+        }
       } catch (error) {
         console.error('로그아웃 실패:', error)
       }
@@ -87,13 +116,15 @@ export const useAuthStore = defineStore('auth', {
     
     // 앱 초기화시 인증 상태 복원
     initAuth() {
-      const token = localStorage.getItem('auth_token')
-      const user = JSON.parse(localStorage.getItem('auth_user') || 'null')
-      
-      if (token && user) {
-        this.token = token
-        this.user = user
-        this.isAuthenticated = true
+      if (isBrowser()) {
+        const token = getLocalStorageItem('auth_token')
+        const user = JSON.parse(getLocalStorageItem('auth_user') || 'null')
+        
+        if (token && user) {
+          this.token = token
+          this.user = user
+          this.isAuthenticated = true
+        }
       }
     }
   }
