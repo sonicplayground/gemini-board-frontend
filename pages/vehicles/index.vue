@@ -57,8 +57,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useVehicleStore } from '@/stores/vehicle'
 
 const router = useRouter()
+const vehicleStore = useVehicleStore()
 const loading = ref(false)
 const vehicles = ref([])
 
@@ -84,20 +86,7 @@ const deleteVehicle = async (item: any) => {
 
   try {
     loading.value = true
-    const response = await fetch(`http://localhost:8080/api/v1/vehicles/${item.id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include'
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || '차량 삭제에 실패했습니다.')
-    }
-
+    await vehicleStore.deleteVehicle(item.id)
     vehicles.value = vehicles.value.filter(v => v.id !== item.id)
   } catch (error: any) {
     console.error('차량 삭제 실패:', error)
@@ -110,19 +99,7 @@ const deleteVehicle = async (item: any) => {
 const fetchVehicles = async () => {
   try {
     loading.value = true
-    const response = await fetch('http://localhost:8080/api/v1/vehicles', {
-      headers: {
-        'Accept': 'application/json'
-      },
-      credentials: 'include'
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.message || '차량 목록을 불러오는데 실패했습니다.')
-    }
-
-    vehicles.value = await response.json()
+    vehicles.value = await vehicleStore.fetchVehicles()
   } catch (error: any) {
     console.error('차량 목록 조회 실패:', error)
     alert(error.message || '차량 목록을 불러오는데 실패했습니다.')
