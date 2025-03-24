@@ -25,12 +25,13 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async login(loginId: string, password: string) {
       try {
-        const response = await fetch('/api/v1/login/sign-in', {
+        const response = await fetch('http://localhost:8080/api/v1/login/sign-in', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({ loginId, password })
         })
 
