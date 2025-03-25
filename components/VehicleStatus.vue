@@ -2,31 +2,81 @@
   <div>
     <!-- 타이어 상태 (상단으로 이동) -->
     <v-card class="mb-6">
-      <v-card-title>타이어 상태</v-card-title>
+      <v-card-title class="d-flex align-center">
+        타이어 상태
+        <v-spacer></v-spacer>
+        <v-btn
+          color="primary"
+          @click="isEditing = !isEditing"
+          size="small"
+        >
+          {{ isEditing ? '저장' : '수정' }}
+        </v-btn>
+      </v-card-title>
       <v-card-text>
         <div class="tire-status-container">
           <div class="tire-grid">
             <div class="tire-position">
               <div class="tire-date" :class="getTireColor('tireForeLeftReplacementDate')">
-                {{ formatDate(getTireDate('tireForeLeftReplacementDate')) }}
+                <v-text-field
+                  v-if="isEditing"
+                  v-model="editedStatus.tireForeLeftReplacementDate"
+                  type="date"
+                  density="compact"
+                  hide-details
+                  class="ma-0 pa-0"
+                ></v-text-field>
+                <template v-else>
+                  {{ formatDate(getTireDate('tireForeLeftReplacementDate')) }}
+                </template>
               </div>
               <div class="tire-icon">🛞</div>
             </div>
             <div class="tire-position">
               <div class="tire-date" :class="getTireColor('tireForeRightReplacementDate')">
-                {{ formatDate(getTireDate('tireForeRightReplacementDate')) }}
+                <v-text-field
+                  v-if="isEditing"
+                  v-model="editedStatus.tireForeRightReplacementDate"
+                  type="date"
+                  density="compact"
+                  hide-details
+                  class="ma-0 pa-0"
+                ></v-text-field>
+                <template v-else>
+                  {{ formatDate(getTireDate('tireForeRightReplacementDate')) }}
+                </template>
               </div>
               <div class="tire-icon">🛞</div>
             </div>
             <div class="tire-position">
               <div class="tire-date" :class="getTireColor('tireBackLeftReplacementDate')">
-                {{ formatDate(getTireDate('tireBackLeftReplacementDate')) }}
+                <v-text-field
+                  v-if="isEditing"
+                  v-model="editedStatus.tireBackLeftReplacementDate"
+                  type="date"
+                  density="compact"
+                  hide-details
+                  class="ma-0 pa-0"
+                ></v-text-field>
+                <template v-else>
+                  {{ formatDate(getTireDate('tireBackLeftReplacementDate')) }}
+                </template>
               </div>
               <div class="tire-icon">🛞</div>
             </div>
             <div class="tire-position">
               <div class="tire-date" :class="getTireColor('tireBackRightReplacementDate')">
-                {{ formatDate(getTireDate('tireBackRightReplacementDate')) }}
+                <v-text-field
+                  v-if="isEditing"
+                  v-model="editedStatus.tireBackRightReplacementDate"
+                  type="date"
+                  density="compact"
+                  hide-details
+                  class="ma-0 pa-0"
+                ></v-text-field>
+                <template v-else>
+                  {{ formatDate(getTireDate('tireBackRightReplacementDate')) }}
+                </template>
               </div>
               <div class="tire-icon">🛞</div>
             </div>
@@ -76,7 +126,17 @@
 
       <!-- 상태 텍스트 목록 -->
       <v-card class="mt-6">
-        <v-card-title>상태 상세 정보</v-card-title>
+        <v-card-title class="d-flex align-center">
+          상태 상세 정보
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            @click="isEditing = !isEditing"
+            size="small"
+          >
+            {{ isEditing ? '저장' : '수정' }}
+          </v-btn>
+        </v-card-title>
         <v-card-text>
           <v-row>
             <v-col cols="12">
@@ -89,22 +149,21 @@
                 </thead>
                 <tbody>
                   <tr v-for="(value, key) in vehicle.status" :key="key">
-                    <td>{{ key }}</td>
+                    <td>{{ getStatusLabel(key) }}</td>
                     <td>
                       <v-text-field
-                        v-if="key === 'mileage'"
-                        :value="value || '0'"
-                        readonly
-                        type="number"
+                        v-if="isEditing"
+                        v-model="editedStatus[key]"
+                        :type="key === 'mileage' ? 'number' : 'date'"
                         density="compact"
                         hide-details
                         class="ma-0 pa-0"
                       ></v-text-field>
                       <v-text-field
                         v-else
-                        :value="value || defaultDate"
+                        :value="value || (key === 'mileage' ? '0' : defaultDate)"
+                        :type="key === 'mileage' ? 'number' : 'date'"
                         readonly
-                        type="date"
                         density="compact"
                         hide-details
                         class="ma-0 pa-0"
@@ -122,16 +181,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps<{
   vehicle: {
+    vehicleKey: string
     purchaseYear: string
     status: Record<string, string>
   }
 }>()
 
+const emit = defineEmits(['update:status'])
+
 const showDetails = ref(false)
+const isEditing = ref(false)
+const editedStatus = ref({ ...props.vehicle.status })
 
 // 기본 날짜 계산 (구매년도 1월 1일)
 const defaultDate = computed(() => {
@@ -273,6 +337,136 @@ const formatDate = (dateString: string) => {
     day: 'numeric'
   })
 }
+
+// 상태 레이블 변환
+const getStatusLabel = (key: string) => {
+  const labels: Record<string, string> = {
+    mileage: '주행거리',
+    engineOilChangeDate: '엔진오일 교체일',
+    brakePadReplacementDate: '브레이크 패드 교체일',
+    tireForeRightReplacementDate: '앞바퀴 오른쪽 타이어 교체일',
+    tireForeLeftReplacementDate: '앞바퀴 왼쪽 타이어 교체일',
+    tireBackRightReplacementDate: '뒷바퀴 오른쪽 타이어 교체일',
+    tireBackLeftReplacementDate: '뒷바퀴 왼쪽 타이어 교체일'
+  }
+  return labels[key] || key
+}
+
+// 수정 모드 저장
+watch(isEditing, async (newValue, oldValue) => {
+  if (!newValue && oldValue) { // 수정 모드에서 저장 모드로 변경될 때
+    try {
+      const originalStatus = props.vehicle.status
+      const changes = Object.entries(editedStatus.value).filter(([key, value]) => {
+        return value !== originalStatus[key]
+      })
+
+      console.log('변경된 항목들:', changes)
+
+      // 각 변경사항에 대해 개별 요청
+      for (const [key, value] of changes) {
+        let endpoint = 'http://localhost:8080/api/v1/vehicles/' + props.vehicle.vehicleKey + '/maintenance'
+        let payload = {}
+
+        // 타이어 교체인 경우
+        if (key.includes('tire')) {
+          const tirePositions = {
+            'tireForeLeftReplacementDate': 'FORE_LEFT',
+            'tireForeRightReplacementDate': 'FORE_RIGHT',
+            'tireBackLeftReplacementDate': 'BACK_LEFT',
+            'tireBackRightReplacementDate': 'BACK_RIGHT'
+          }
+          
+          payload = {
+            maintenanceType: 'tire',
+            changeDate: value,
+            tirePosition: tirePositions[key]
+          }
+        }
+        // 브레이크 패드 교체인 경우
+        else if (key === 'brakePadReplacementDate') {
+          payload = {
+            maintenanceType: 'brake',
+            changeDate: value
+          }
+        }
+        // 엔진 오일 교체인 경우
+        else if (key === 'engineOilChangeDate') {
+          payload = {
+            maintenanceType: 'oil',
+            changeDate: value
+          }
+        }
+        // 주행거리인 경우
+        else if (key === 'mileage') {
+          endpoint = 'http://localhost:8080/api/v1/vehicles/' + props.vehicle.vehicleKey + '/mileage'
+          payload = {
+            mileage: parseInt(value)
+          }
+        }
+
+        // 토큰 가져오기
+        const token = localStorage.getItem('token')
+        if (!token) {
+          throw new Error('인증 토큰이 없습니다.')
+        }
+
+        console.log('요청 정보:', {
+          endpoint,
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          },
+          payload
+        })
+
+        const response = await fetch(endpoint, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        })
+
+        console.log('응답 상태:', response.status, response.statusText)
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('에러 응답 전문:', errorText)
+          try {
+            const errorData = JSON.parse(errorText)
+            console.error('파싱된 에러 데이터:', errorData)
+            throw new Error(`${key} 업데이트 실패: ${errorData.message || response.statusText}`)
+          } catch (e) {
+            throw new Error(`${key} 업데이트 실패: ${errorText || response.statusText}`)
+          }
+        }
+
+        const responseData = await response.text()
+        console.log(`${key} 업데이트 응답:`, responseData)
+        if (responseData) {
+          try {
+            console.log('파싱된 응답 데이터:', JSON.parse(responseData))
+          } catch (e) {
+            console.log('응답을 JSON으로 파싱할 수 없습니다.')
+          }
+        }
+      }
+
+      // 모든 요청이 성공하면 부모 컴포넌트에 업데이트된 상태 전달
+      emit('update:status', editedStatus.value)
+    } catch (error) {
+      console.error('상태 업데이트 중 에러 발생:', error)
+      // 에러 발생 시 편집된 상태를 원래 상태로 되돌림
+      editedStatus.value = { ...props.vehicle.status }
+    }
+  }
+})
 </script>
 
 <style scoped>

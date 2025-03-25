@@ -46,10 +46,7 @@ export default defineNuxtConfig({
     devProxy: {
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-        prependPath: true,
-        ws: true
+        changeOrigin: true
       }
     }
   }
